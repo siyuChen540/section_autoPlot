@@ -184,9 +184,9 @@ def logit_cut(lon_array:np.ndarray, lat_array:np.ndarray, cut_array:np.ndarray, 
     """
     lon_min, lon_max, lat_min, lat_max = LL_BBOX
 
-    lat_boolean:bool = (lat_array > lat_min) & (lat_array < lat_max)
-    lon_boolean:bool = (lon_array > lon_min) & (lon_array < lon_max)
+    lat_bool:bool = (lat_array > lat_min) & (lat_array < lat_max)
+    lon_bool:bool = (lon_array > lon_min) & (lon_array < lon_max)
     
-    row_cut:np.ndarray = cut_array[lat_boolean]
-    col_row_cut:np.ndarray = row_cut[:, lon_boolean]
-    return col_row_cut
+    row_cut:np.ndarray = cut_array[lat_bool]
+    col_cut:np.ndarray = row_cut[:, lon_bool]
+    return col_cut
