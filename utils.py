@@ -19,23 +19,23 @@ from cartopy.feature import ShapelyFeature
 
 def custom_cmap():
     colors = [
-        (127/255, 0, 0),
-        (168/255, 0, 0),
-        (207/255, 24/255, 0),
-        (241/255, 88/255, 0),
-        (255/255, 118/255, 0),
-        (255/255, 158/255, 0),
-        (255/255, 194/255, 0),
-        (232/255, 217/255, 36/255),
-        (181/255, 202/255, 43/255),
-        (123/255, 180/255, 62/255),
-        (68/255, 162/255, 96/255),
-        (0, 126/255, 137/255),
-        (0, 77/255, 217/255),
-        (0/255, 42/255, 235/255),
-        (0/255, 14/255, 217/255),
-        (8/255, 77/255, 152/255),
-        (204/255, 223/255, 241/255)
+        (127/255, 0, 0),                # dark red
+        (168/255, 0, 0),                # red
+        (207/255, 24/255, 0),           # red orange
+        (241/255, 88/255, 0),           # orange
+        (255/255, 118/255, 0),          # orange
+        (255/255, 158/255, 0),          # orange
+        (255/255, 194/255, 0),          # yellow
+        (232/255, 217/255, 36/255),     # yellow
+        (181/255, 202/255, 43/255),     # yellow green
+        (123/255, 180/255, 62/255),     # green
+        (68/255, 162/255, 96/255),      # green
+        (0, 126/255, 137/255),          # green
+        (0, 77/255, 217/255),           # blue
+        (0/255, 42/255, 235/255),       # blue
+        (0/255, 14/255, 217/255),       # blue
+        (8/255, 77/255, 152/255),       # blue
+        (204/255, 223/255, 241/255)     # light blue
     ]
     from matplotlib.colors import ListedColormap
     cmap = ListedColormap(colors)
@@ -183,7 +183,7 @@ def logit_cut(lon_array:np.ndarray, lat_array:np.ndarray, cut_array:np.ndarray, 
             col_row_cut: cut array
     """
     lon_min, lon_max, lat_min, lat_max = LL_BBOX
-    
+
     lat_boolean:bool = (lat_array > lat_min) & (lat_array < lat_max)
     lon_boolean:bool = (lon_array > lon_min) & (lon_array < lon_max)
     

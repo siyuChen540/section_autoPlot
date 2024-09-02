@@ -122,11 +122,13 @@ def main():
         )
 
     # 设定colorbar
-    cbar = fig.colorbar(cf, 
-        ax=ax, extend='both', 
-        shrink=0.5, pad=0.1, 
-        orientation='horizontal', 
-        boundaries=np.linspace(-6000, 200, 13))
+    cbar = fig.colorbar(
+        cf, ax = ax, 
+        extend = 'both', 
+        shrink = 0.5, 
+        pad = 0.1, 
+        orientation = 'horizontal', 
+        boundaries = np.linspace(-6000, 200, 13))
     cbar.ax.set_xlabel('Depth (m)', fontsize = GRID_FONTSIZE)
     cbar.ax.tick_params(labelsize = GRID_FONTSIZE)
     cbar.ax.yaxis.set_tick_params(labelsize = GRID_FONTSIZE)
@@ -152,12 +154,12 @@ def main():
     files = glob(os.path.join(ROOT, "assets", "*.xlsx"))
     for idx, file in enumerate(files):
         section_name = file.split("\\")[-1].split(".")[0]
-        table = pd.read_excel(file, sheet_name=0)
+        ds = pd.read_excel(file, sheet_name=0)
 
         # 转为10分制
         try:
-            table['decimal_lon'] = table['经度(度)'].dropna() + table['经度(分)'].dropna() / 60
-            table['decimal_lat'] = table['纬度(度)'].dropna() + table['纬度(分)'].dropna() / 60
+            ds['decimal_lon'] = ds['经度(度)'].dropna() + ds['经度(分)'].dropna() / 60
+            ds['decimal_lat'] = ds['纬度(度)'].dropna() + ds['纬度(分)'].dropna() / 60
         except:
             raise NameError, "excel文件经纬度数据列名错误"
         
@@ -165,8 +167,8 @@ def main():
         facecolor = plt.cm.jet((len(files) - idx) / len(files))
 
         ax.scatter(
-            table['decimal_lon'],
-            table['decimal_lat'],
+            ds['decimal_lon'],
+            ds['decimal_lat'],
             color = facecolor,
             alpha = SCATTER_ALPHA,
             edgecolors = 'black',
