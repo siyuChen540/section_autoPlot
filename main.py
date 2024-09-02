@@ -17,7 +17,6 @@ import sys
 # current_dire = sys.
 import numpy as np
 import pandas as pd
-import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeat
@@ -40,38 +39,30 @@ warnings.filterwarnings(
 )
 
 
-plt.rcParams['font.family'] = ['times new roman']   # 定义英文字体为新罗马
-plt.rcParams["font.sans-serif"]=["SimHei"]          # 定义中文字体为宋体
+plt.rcParams['font.family'] = ['times new roman']       # 定义英文字体为新罗马
+plt.rcParams["font.sans-serif"]=["SimHei"]              # 定义中文字体为宋体
 
-def load_depth_ds(ncdir:str) -> np.array:
-    """
-        Description : load depth netCDF format dataset and mask land
-        Input       : gebcco depth dataset directory
-        output      : np array
-    """
-    ds         = xr.open_dataset(ncdir)
-    depth      = ds['depth'].values
-    depth      = depth.astype(np.float32)
-    ll_bbox    = [
-        ds['lon'].values[0], 
-        ds['lon'].values[-1], 
-        ds['lat'].values[0], 
-        ds['lat'].values[-1]]
-
-    mask         = generate_land_mask(ll_bbox, depth.shape)      # 生成陆地掩膜
-    depth[mask]  = np.nan
-
-    return depth
 
 def main():
     # 设置常量
-    DPI = 1200                                        # 分辨率
-    SCATTER_SIZE = 15                                 # 散点大小
-    SCATTER_LINEWIDTH = 0.5                           # 散点线宽
-    LL_BBOX = [105, 125, 5, 25]                       # 经纬度边界
-    PROJ = ccrs.PlateCarree()                         # 投影方式
-    ROOT = os.path.dirname(os.path.abspath(__file__)) # 获取当前文件路径
-    OUT  = "marineRsearch.png"                        # 输出文件名
+    DPI = 1200                                          # 分辨率
+    SCATTER_SIZE = 15                                   # 散点大小
+    SCATTER_LINEWIDTH = 0.5                             # 散点线宽
+    SCATTER_ALPHA = 0.8                                 # 散点透明度
+
+    LL_BBOX = [105, 125, 5, 25]                         # 经纬度边界
+    PROJ = ccrs.PlateCarree()                           # 投影方式
+    
+    ROOT = os.path.dirname(os.path.abspath(__file__))   # 获取当前文件路径
+    OUT  = "marineRsearch.png"                          # 输出文件名
+    
+    GRID_FONTSIZE = 8                                   # 网格字体大小
+    LEGEND_FONTSIZE = 5                                 # 图例字体大小
+    
+    AZIMUTH = 315                                       # 光源方位角
+    ALTITUDE = 45                                       # 光源高度角
+
+    lon_min, lon_max, lat_min, lat_max = LL_BBOX        # 分取边界角点
 
     fig = plt.figure(dpi=DPI)
     
@@ -85,10 +76,13 @@ def main():
     
     for _, value in shp_dir.items():
         ABS_DIR = os.path.join(ROOT, value['dir'])
+
+        # 基于已定义的投影坐标系读取Shapfiles
         shp_var = cfeat.ShapelyFeature(
             Reader(ABS_DIR).geometries(),
             PROJ,
         )
+        # 添加Shapfiles变量
         ax.add_feature(
             shp_var, 
             facecolor = value["facecolor"],
@@ -99,14 +93,14 @@ def main():
         )
         del _, value
     
-    # # 添加深度数据并获取经纬度范围
+    # 添加深度数据并获取经纬度范围
     depth = load_depth_ds(gebcco_dir["SCS"])
-    hill_shade = hillshade(-depth,315,45)
+    hill_shade = hillshade(-depth,AZIMUTH,ALTITUDE)
 
-    # # 添加自定义color map
+    # 添加自定义color map
     cmap = custom_cmap()
 
-    # # 绘制深度图及深度梯度计算所得山体阴影
+    # 绘制深度图及深度梯度计算所得山体阴影
     cf = ax.imshow(
         depth,
         origin = 'lower',
@@ -117,7 +111,7 @@ def main():
         interpolation = 'nearest'
         )
     
-    cd = ax.imshow(
+    ax.imshow(
         hill_shade,
         origin = 'lower',
         cmap = 'Greys_r',
@@ -133,9 +127,9 @@ def main():
         shrink=0.5, pad=0.1, 
         orientation='horizontal', 
         boundaries=np.linspace(-6000, 200, 13))
-    cbar.ax.set_xlabel('Depth (m)',fontsize=8)
-    cbar.ax.tick_params(labelsize=8)
-    cbar.ax.yaxis.set_tick_params(labelsize=8)
+    cbar.ax.set_xlabel('Depth (m)', fontsize = GRID_FONTSIZE)
+    cbar.ax.tick_params(labelsize = GRID_FONTSIZE)
+    cbar.ax.yaxis.set_tick_params(labelsize = GRID_FONTSIZE)
 
     gl = ax.gridlines(crs=ccrs.PlateCarree(),
         draw_labels=True,
@@ -143,34 +137,38 @@ def main():
         color='gray',
         linewidth=0.5,
         alpha=0.5,
-        xlocs=np.arange(105,125,5),
-        ylocs=np.arange(5,25,5)
+        xlocs=np.arange(lon_min,lon_max,5),
+        ylocs=np.arange(lat_min,lat_max,5)
         )
+    
     ax._autoscaleXon = False
     ax._autoscaleYon = False
-    gl.xlabels_top = False  
+    gl.xlabels_top   = False  
     gl.ylabels_right = False  
-    gl.xlabel_style = {'size': 8, 'color': 'black'}
-    gl.ylabel_style = {'size': 8, 'color': 'black'}
+    gl.xlabel_style  = {'size': GRID_FONTSIZE, 'color': 'black'}
+    gl.ylabel_style  = {'size': GRID_FONTSIZE, 'color': 'black'}
 
     # 绘制航次站点
-    xlsx_files = glob(os.path.join(ROOT, "assets", "*.xlsx"))
-    for idx, xlsx_file in enumerate(xlsx_files):
-        section_name = xlsx_file.split("\\")[-1].split(".")[0]
-        xlsx_table = pd.read_excel(xlsx_file, sheet_name=0)
+    files = glob(os.path.join(ROOT, "assets", "*.xlsx"))
+    for idx, file in enumerate(files):
+        section_name = file.split("\\")[-1].split(".")[0]
+        table = pd.read_excel(file, sheet_name=0)
 
         # 转为10分制
-        xlsx_table['decimal_lon'] = xlsx_table['经度(度)'].dropna() + xlsx_table['经度(分)'].dropna() / 60
-        xlsx_table['decimal_lat'] = xlsx_table['纬度(度)'].dropna() + xlsx_table['纬度(分)'].dropna() / 60
-
+        try:
+            table['decimal_lon'] = table['经度(度)'].dropna() + table['经度(分)'].dropna() / 60
+            table['decimal_lat'] = table['纬度(度)'].dropna() + table['纬度(分)'].dropna() / 60
+        except:
+            raise NameError, "excel文件经纬度数据列名错误"
+        
         # facecolor使用jet等额划分
-        facecolor = plt.cm.jet((7-idx)/7)
+        facecolor = plt.cm.jet((len(files) - idx) / len(files))
 
         ax.scatter(
-            xlsx_table['decimal_lon'],
-            xlsx_table['decimal_lat'],
+            table['decimal_lon'],
+            table['decimal_lat'],
             color = facecolor,
-            alpha = 0.8,
+            alpha = SCATTER_ALPHA,
             edgecolors = 'black',
             s = SCATTER_SIZE,
             label = section_name,
@@ -178,10 +176,10 @@ def main():
             transform = PROJ
         )
     legend = ax.legend(
-        loc='lower right',fontsize=5, ncol=1,
+        loc = 'lower right', fontsize = LEGEND_FONTSIZE, ncol = 1,
         )
     legend.set_zorder(25)
-    plt.savefig(OUT, dpi=DPI, bbox_inches='tight')
+    plt.savefig(OUT, dpi = DPI, bbox_inches = 'tight')
 
 if __name__ == "__main__":
     main()

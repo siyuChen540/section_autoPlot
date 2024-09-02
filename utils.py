@@ -11,6 +11,10 @@
 
 
 import numpy as np
+import xarray as xr
+
+from cartopy.io.shapereader import Reader
+from cartopy.feature import ShapelyFeature
 
 
 def custom_cmap():
@@ -138,5 +142,51 @@ def generate_rectangle(ll_bbox:list,edgecolor:str='k',zorder:int=1):
     return rect
 
 
-from cartopy.io.shapereader import Reader
-from cartopy.feature import ShapelyFeature
+def load_depth_ds(ncdir:str) -> np.array:
+    """
+        Description : load depth netCDF format dataset and mask land
+        Input       : gebcco depth dataset directory
+        output      : np array
+    """
+    ds         = xr.open_dataset(ncdir)
+    depth      = ds['depth'].values
+    depth      = depth.astype(np.float32)
+    ll_bbox    = [
+        ds['lon'].values[0], 
+        ds['lon'].values[-1], 
+        ds['lat'].values[0], 
+        ds['lat'].values[-1]]
+
+    mask         = generate_land_mask(ll_bbox, depth.shape)      # 生成陆地掩膜
+    depth[mask]  = np.nan
+
+    return depth
+
+def logit_cut(lon_array:np.ndarray, lat_array:np.ndarray, cut_array:np.ndarray, LL_BBOX:list) -> np.ndarray:
+    """
+        Description: cut the array by longitude and latitude, 
+        LL_BBOX is the target longitude and latitude range::
+
+            :          +----------------(lon_max, lat_max)
+            :          |                         |
+            :         lat                        |
+            :          |                         |
+            : (lon_min, lat_min)------ lon ------+
+        
+        Input:
+            lon_array: longitude array
+            lat_array: latitude array
+            cut_array: array to be cut
+            LL_BBOX: [lon_min, lon_max, lat_min, lat_max]
+    
+        Output:
+            col_row_cut: cut array
+    """
+    lon_min, lon_max, lat_min, lat_max = LL_BBOX
+    
+    lat_boolean:bool = (lat_array > lat_min) & (lat_array < lat_max)
+    lon_boolean:bool = (lon_array > lon_min) & (lon_array < lon_max)
+    
+    row_cut:np.ndarray = cut_array[lat_boolean]
+    col_row_cut:np.ndarray = row_cut[:, lon_boolean]
+    return col_row_cut
