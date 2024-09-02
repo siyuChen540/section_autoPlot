@@ -65,12 +65,13 @@ def load_depth_ds(ncdir:str) -> np.array:
 
 def main():
     # 设置常量
-    DPI = 1200                  # 分辨率
-    SCATTER_SIZE = 15           # 散点大小
-    SCATTER_LINEWIDTH = 0.5     # 散点线宽
-    LL_BBOX = [105, 125, 5, 25] # 经纬度边界
-    PROJ = ccrs.PlateCarree()   # 投影方式
+    DPI = 1200                                        # 分辨率
+    SCATTER_SIZE = 15                                 # 散点大小
+    SCATTER_LINEWIDTH = 0.5                           # 散点线宽
+    LL_BBOX = [105, 125, 5, 25]                       # 经纬度边界
+    PROJ = ccrs.PlateCarree()                         # 投影方式
     ROOT = os.path.dirname(os.path.abspath(__file__)) # 获取当前文件路径
+    OUT  = "marineRsearch.png"                        # 输出文件名
 
     fig = plt.figure(dpi=DPI)
     
@@ -180,7 +181,7 @@ def main():
         loc='lower right',fontsize=5, ncol=1,
         )
     legend.set_zorder(25)
-    plt.savefig("marineRsearch.png", dpi=DPI, bbox_inches='tight')
+    plt.savefig(OUT, dpi=DPI, bbox_inches='tight')
 
 if __name__ == "__main__":
     main()
