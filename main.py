@@ -9,12 +9,10 @@
 @envName     :  nc_cartopy(laptop); geoDraw(pc)
 '''
 
+import os
 import warnings
 from glob import glob
-# 获取当前位置
-import os
-import sys
-# current_dire = sys.
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -46,6 +44,7 @@ plt.rcParams["font.sans-serif"]=["SimHei"]              # 定义中文字体为�
 def main():
     # 设置常量
     DPI = 1200                                          # 分辨率
+
     SCATTER_SIZE = 15                                   # 散点大小
     SCATTER_LINEWIDTH = 0.5                             # 散点线宽
     SCATTER_ALPHA = 0.8                                 # 散点透明度
@@ -70,19 +69,31 @@ def main():
     ax.set_extent(LL_BBOX,crs=ccrs.PlateCarree())       # 设置显示范围
     
     # 添加相关shp资料
-    ax.coastlines(resolution='50m',linewidth=0.5, edgecolor='black',zorder=20)
-    ax.add_feature(cfeat.BORDERS, linewidth=0.8, linestyle='-',zorder=20)
-    ax.add_feature(cfeat.LAND, facecolor='gray', zorder=10)
+    ax.coastlines(
+        resolution = '50m',                             # 分辨率
+        linewidth = 0.5,                                # 线宽
+        edgecolor = 'black',                            # 边缘颜色
+        zorder = 20)                                    # 层级      
+    ax.add_feature(
+        cfeat.BORDERS,                                  # 添加边界
+        linewidth = 0.8, 
+        linestyle = '-',                                # 线型
+        zorder = 20)
+    ax.add_feature(
+        cfeat.LAND, 
+        facecolor = 'grey',                             # 陆地颜色
+        alpha = 0.5,                                    # 透明度 
+        zorder = 10)
     
-    for _, value in shp_dir.items():
-        ABS_DIR = os.path.join(ROOT, value['dir'])
+    for _, value in shp_dir.items():                    # 读取shp文件
+        ABS_DIR = os.path.join(ROOT, value['dir'])      # 获取shp文件路径
 
         # 基于已定义的投影坐标系读取Shapfiles
         shp_var = cfeat.ShapelyFeature(
             Reader(ABS_DIR).geometries(),
             PROJ,
         )
-        # 添加Shapfiles变量
+        
         ax.add_feature(
             shp_var, 
             facecolor = value["facecolor"],
@@ -94,7 +105,7 @@ def main():
         del _, value
     
     # 添加深度数据并获取经纬度范围
-    depth = load_depth_ds(gebcco_dir["SCS"])
+    depth      = load_depth_ds(gebcco_dir["SCS"], LL_BBOX)
     hill_shade = hillshade(-depth,AZIMUTH,ALTITUDE)
 
     # 添加自定义color map
@@ -103,44 +114,48 @@ def main():
     # 绘制深度图及深度梯度计算所得山体阴影
     cf = ax.imshow(
         depth,
-        origin = 'lower',
-        cmap = cmap,
-        extent = LL_BBOX,
-        transform = PROJ,
-        vmin = -6000, vmax = 200,
+        origin        = 'lower',
+        cmap          = cmap,
+        extent        = LL_BBOX,
+        transform     = PROJ,
+        vmin          = -6000, 
+        vmax          = 200,
         interpolation = 'nearest'
         )
     
     ax.imshow(
         hill_shade,
-        origin = 'lower',
-        cmap = 'Greys_r',
-        extent = LL_BBOX,
-        transform = PROJ,
-        alpha = 0.5,
+        origin        = 'lower',
+        cmap          = 'Greys_r',
+        extent        = LL_BBOX,
+        transform     = PROJ,
+        alpha         = 0.5,
         interpolation = 'nearest'
         )
 
     # 设定colorbar
     cbar = fig.colorbar(
-        cf, ax = ax, 
-        extend = 'both', 
-        shrink = 0.5, 
-        pad = 0.1, 
-        orientation = 'horizontal', 
-        boundaries = np.linspace(-6000, 200, 13))
-    cbar.ax.set_xlabel('Depth (m)', fontsize = GRID_FONTSIZE)
+        cf, ax        = ax, 
+        extend        = 'both', 
+        shrink        = 0.5, 
+        pad           = 0.1, 
+        orientation   = 'horizontal', 
+        boundaries    = np.linspace(-6000, 200, 13))
+    
+    cbar.ax.set_xlabel(
+        'Depth (m)', 
+        fontsize = GRID_FONTSIZE)
     cbar.ax.tick_params(labelsize = GRID_FONTSIZE)
     cbar.ax.yaxis.set_tick_params(labelsize = GRID_FONTSIZE)
 
     gl = ax.gridlines(crs=ccrs.PlateCarree(),
-        draw_labels=True,
-        linestyle='--',
-        color='gray',
-        linewidth=0.5,
-        alpha=0.5,
-        xlocs=np.arange(lon_min,lon_max,5),
-        ylocs=np.arange(lat_min,lat_max,5)
+        draw_labels = True,
+        linestyle   = '--',
+        color       = 'grey',
+        linewidth   = 0.5,
+        alpha       = 0.5,
+        xlocs       = np.arange(lon_min,lon_max,5),
+        ylocs       = np.arange(lat_min,lat_max,5)
         )
     
     ax._autoscaleXon = False
@@ -161,10 +176,10 @@ def main():
             ds['decimal_lon'] = ds['经度(度)'].dropna() + ds['经度(分)'].dropna() / 60
             ds['decimal_lat'] = ds['纬度(度)'].dropna() + ds['纬度(分)'].dropna() / 60
         except:
-            raise NameError, "excel文件经纬度数据列名错误"
+            raise "excel文件经纬度数据列名错误"  
         
         # facecolor使用jet等额划分
-        facecolor = plt.cm.jet((len(files) - idx) / len(files))
+        facecolor = plt.cm.rainbow((len(files) - idx) / len(files))
 
         ax.scatter(
             ds['decimal_lon'],

@@ -142,23 +142,24 @@ def generate_rectangle(ll_bbox:list,edgecolor:str='k',zorder:int=1):
     return rect
 
 
-def load_depth_ds(ncdir:str) -> np.array:
+def load_depth_ds(ncdir:str, LL_BBOX:list) -> np.array:
     """
         Description : load depth netCDF format dataset and mask land
-        Input       : gebcco depth dataset directory
+        Input       : 
+            ncdir: netCDF gebcco depth dataset directory
+            LL_BBOX: [lon_min, lon_max, lat_min, lat_max]
         output      : np array
     """
-    ds         = xr.open_dataset(ncdir)
-    depth      = ds['depth'].values
-    depth      = depth.astype(np.float32)
-    ll_bbox    = [
-        ds['lon'].values[0], 
-        ds['lon'].values[-1], 
-        ds['lat'].values[0], 
-        ds['lat'].values[-1]]
+    ds    = xr.open_dataset(ncdir)                               # 打开数据集
+    depth = ds['depth'].values                                   # 获取深度数据
+    lon   = ds['lon'].values                                     # 获取经纬度数据
+    lat   = ds['lat'].values                                     # 获取经纬度数据
+    
+    depth = depth.astype(np.float32)                             # 转换数据类型
+    depth = logit_cut(lon, lat, depth, LL_BBOX)                  # 裁剪数据
 
-    mask         = generate_land_mask(ll_bbox, depth.shape)      # 生成陆地掩膜
-    depth[mask]  = np.nan
+    mask         = generate_land_mask(LL_BBOX, depth.shape)      # 生成陆地掩膜
+    depth[mask]  = np.nan                                        # 掩膜数据
 
     return depth
 
